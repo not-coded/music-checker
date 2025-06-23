@@ -15,16 +15,16 @@ class MainWindow(QWidget):
 
     def initUI(self):
         self.setGeometry(200, 100, 780, 360)
-        self.setWindowTitle('SpotDL Checker')
+        self.setWindowTitle('Music Checker')
         layout = QVBoxLayout()
         #layout.addItem(QSpacerItem(20, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed))
         self.setLayout(layout)
 
-        label = QLabel('SpotDL Checker')
+        label = QLabel('Music Checker')
         label.setStyleSheet("font-size: 16pt;")
         layout.addWidget(label)
 
-        label = QLabel('This tool checks if you have the right song by comparing the YouTube link to the song metadata')
+        label = QLabel('This tool checks if the music file is the right one by comparing the YouTube link to the song metadata, if there is no link then it will use the title and author of the metadata.')
         layout.addWidget(label)
 
         layout.addItem(QSpacerItem(10, 10, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed))

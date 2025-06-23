@@ -1,6 +1,7 @@
 import os
 import sys
 import re
+import requests
 from PyQt6.QtWidgets import QApplication, QSpacerItem, QSizePolicy, QLabel, QFileDialog, QLineEdit, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import QByteArray, Qt
@@ -44,7 +45,7 @@ class MainWindow(QWidget):
 
         layout.addItem(QSpacerItem(20, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed))
 
-        # ---- Showing music metadata ----
+        # ---- Showing song metadata ----
 
         container = QWidget()
         centered_layout = QHBoxLayout(container)
@@ -53,44 +54,91 @@ class MainWindow(QWidget):
         labels = QVBoxLayout(labels_widget)
         labels.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         
-        self.titleLabel = QLabel('Title: ')
-        self.titleLabel.setStyleSheet("font-size: 12pt;")
-        self.titleLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.titleLabel.hide()
-        labels.addWidget(self.titleLabel)
+        self.songMetadataLabel = QLabel('Song Metadata:')
+        self.songMetadataLabel.setStyleSheet("font-size: 16pt;")
+        self.songMetadataLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.songMetadataLabel.hide()
+        layout.addWidget(self.songMetadataLabel)
 
-        self.artistLabel = QLabel('Artist: ')
-        self.artistLabel.setStyleSheet("font-size: 12pt;")
-        self.artistLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.artistLabel.hide()
-        labels.addWidget(self.artistLabel)
+        self.songTitleLabel = QLabel('Title: ')
+        self.songTitleLabel.setStyleSheet("font-size: 12pt;")
+        self.songTitleLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.songTitleLabel.hide()
+        labels.addWidget(self.songTitleLabel)
 
-        self.durationLabel = QLabel('Duration: ')
-        self.durationLabel.setStyleSheet("font-size: 12pt;")
-        self.durationLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.durationLabel.hide()
-        labels.addWidget(self.durationLabel)
+        self.songArtistLabel = QLabel('Artist: ')
+        self.songArtistLabel.setStyleSheet("font-size: 12pt;")
+        self.songArtistLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.songArtistLabel.hide()
+        labels.addWidget(self.songArtistLabel)
 
-        self.commentLabel = QLabel('Comment: ')
-        self.commentLabel.setStyleSheet("font-size: 12pt;")
-        self.commentLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.commentLabel.hide()
-        labels.addWidget(self.commentLabel)
+        self.songDurationLabel = QLabel('Duration: ')
+        self.songDurationLabel.setStyleSheet("font-size: 12pt;")
+        self.songDurationLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.songDurationLabel.hide()
+        labels.addWidget(self.songDurationLabel)
+
+        self.songCommentLabel = QLabel('Comment: ')
+        self.songCommentLabel.setStyleSheet("font-size: 12pt;")
+        self.songCommentLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.songCommentLabel.hide()
+        labels.addWidget(self.songCommentLabel)
 
         # WOAS - The 'Official audio source webpage' frame is a URL pointing at the official webpage for the source of the audio file, e.g. a movie.
         # https://mypod.sourceforge.net/user%20manual/html/apa.html
         # SpotDL includes the spotify link which we can use incase the song is wrong.
-        self.woasLabel = QLabel('Source: ')
-        self.woasLabel.setStyleSheet("font-size: 12pt;")
-        self.woasLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.woasLabel.hide()
-        labels.addWidget(self.woasLabel)
+        self.songSourceLabel = QLabel('Source: ')
+        self.songSourceLabel.setStyleSheet("font-size: 12pt;")
+        self.songSourceLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.songSourceLabel.hide()
+        labels.addWidget(self.songSourceLabel)
         
         centered_layout.addWidget(labels_widget)
         
-        self.imageLabel = QLabel()
-        self.imageLabel.hide()
-        centered_layout.addWidget(self.imageLabel)
+        self.songImageLabel = QLabel()
+        self.songImageLabel.hide()
+        centered_layout.addWidget(self.songImageLabel)
+        
+        layout.addWidget(container, 0, Qt.AlignmentFlag.AlignCenter)
+
+        # ---- Showing YouTube metadata ----
+
+        container = QWidget()
+        centered_layout = QHBoxLayout(container)
+        
+        labels_widget = QWidget()
+        labels = QVBoxLayout(labels_widget)
+        labels.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        
+        self.youtubeMetadataLabel = QLabel('YouTube Metadata:')
+        self.youtubeMetadataLabel.setStyleSheet("font-size: 16pt;")
+        self.youtubeMetadataLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.youtubeMetadataLabel.hide()
+        layout.addWidget(self.youtubeMetadataLabel)
+
+        self.youtubeTitleLabel = QLabel('Title: ')
+        self.youtubeTitleLabel.setStyleSheet("font-size: 12pt;")
+        self.youtubeTitleLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.youtubeTitleLabel.hide()
+        labels.addWidget(self.youtubeTitleLabel)
+
+        self.youtubeArtistLabel = QLabel('Artist: ')
+        self.youtubeArtistLabel.setStyleSheet("font-size: 12pt;")
+        self.youtubeArtistLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.youtubeArtistLabel.hide()
+        labels.addWidget(self.youtubeArtistLabel)
+
+        self.youtubeDurationLabel = QLabel('Duration: ')
+        self.youtubeDurationLabel.setStyleSheet("font-size: 12pt;")
+        self.youtubeDurationLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.youtubeDurationLabel.hide()
+        labels.addWidget(self.youtubeDurationLabel)
+        
+        centered_layout.addWidget(labels_widget)
+        
+        self.youtubeImageLabel = QLabel()
+        self.youtubeImageLabel.hide()
+        centered_layout.addWidget(self.youtubeImageLabel)
         
         layout.addWidget(container, 0, Qt.AlignmentFlag.AlignCenter)
 
@@ -116,7 +164,7 @@ class MainWindow(QWidget):
         # 1. get metadata
         # 2. update Title, Artist, Duration, Comment (link)
         # 2.1. show image?
-        self.show_metadata()
+        self.show_song_metadata()
 
         # 3. check youtube link in comment
         # 4. if valid then checkmark yay
@@ -134,14 +182,13 @@ class MainWindow(QWidget):
         if video_info is None:
             return None
 
+        # if the author name (youtube) contains author name (metadata) and same thing with author then return true
         print(video_info)
 
-        # if the author name (youtube) contains author name (metadata) and same thing with author then return true
-
-        print(video_info['author'].lower())
-        print(tag.artist.lower())
+        self.show_youtube_metadata(video_info)
 
         if tag.artist.lower() in video_info['author'].lower() and tag.artist.lower() in video_info['author'].lower():
+            print("the youtube song and the metadata song match!!!!")
             return True
 
         
@@ -171,33 +218,58 @@ class MainWindow(QWidget):
                     'title': info.get('title'),
                     'author': info.get('uploader'),
                     'duration': info.get('duration'),
-                    'id': url
+                    'id': url,
+                    'thumbnail': info.get('thumbnail')
                 }
         except Exception as e:
             print(e)
             return None
-        
 
-    def show_metadata(self):
+    
+    def show_youtube_metadata(self, video_info):
+        self.youtubeMetadataLabel.show()
+
+        self.youtubeTitleLabel.setText(f"Title: {video_info['title']}")
+        self.youtubeTitleLabel.show()
+        self.youtubeArtistLabel.setText(f"Artist: {video_info['author']}")
+        self.youtubeArtistLabel.show()
+
+        minutes = int(video_info['duration'] // 60)
+        seconds = int(video_info['duration'] % 60)
+        self.youtubeDurationLabel.setText(f"Duration: {minutes:02d}:{seconds:02d}")
+        self.youtubeDurationLabel.show()
+
+        if video_info['thumbnail'] is not None:
+            response = requests.get(video_info['thumbnail']) # its a webp link
+            pixmap = QPixmap()
+            pixmap.loadFromData(response.content)
+            pixmap = pixmap.scaled(356, 200) # wohooo we love 16:9
+
+            self.youtubeImageLabel.setPixmap(pixmap)
+            self.youtubeImageLabel.show()
+
+    def show_song_metadata(self):
         tag = TinyTag.get(self.current_file, image=True)
         image: Image | None = tag.images.any
 
-        self.titleLabel.setText(f"Title: {tag.title}")
-        self.titleLabel.show()
-        self.artistLabel.setText(f"Artist: {tag.artist}")
-        self.artistLabel.show()
+        self.songMetadataLabel.show()
+
+        self.songTitleLabel.setText(f"Title: {tag.title}")
+        self.songTitleLabel.show()
+        self.songArtistLabel.setText(f"Artist: {tag.artist}")
+        self.songArtistLabel.show()
 
         minutes = int(tag.duration // 60)
         seconds = int(tag.duration % 60)
-        self.durationLabel.setText(f"Duration: {minutes:02d}:{seconds:02d}")
-        self.durationLabel.show()
+        self.songDurationLabel.setText(f"Duration: {minutes:02d}:{seconds:02d}")
+        self.songDurationLabel.show()
 
-        self.commentLabel.setText(f"Comment: {tag.comment}")
-        self.commentLabel.show()
+        self.songCommentLabel.setText(f"Comment: {tag.comment}")
+        self.songCommentLabel.show()
 
         if tag.other.get('woas') is not None:
-            self.woasLabel.setText(f"Source: {tag.other.get('woas')[0]}")
-            self.woasLabel.show()
+            self.songSourceLabel.setText(f"Source: {tag.other.get('woas')[0]}")
+            self.songSourceLabel.show()
 
         if image is not None:
             # https://pypi.org/project/tinytag/
@@ -209,8 +281,8 @@ class MainWindow(QWidget):
             pixmap.loadFromData(bytes_buffer)
             pixmap = pixmap.scaled(200, 200)
 
-            self.imageLabel.setPixmap(pixmap)
-            self.imageLabel.show()        
+            self.songImageLabel.setPixmap(pixmap)
+            self.songImageLabel.show()        
 
 
         

@@ -2,9 +2,10 @@ import os
 import sys
 import re
 import requests
+import time
 from PyQt6.QtWidgets import QApplication, QSpacerItem, QSizePolicy, QLabel, QFileDialog, QLineEdit, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel
-from PyQt6.QtGui import QPixmap
-from PyQt6.QtCore import QByteArray, Qt
+from PyQt6.QtGui import QPixmap, QDesktopServices
+from PyQt6.QtCore import QByteArray, QTimer, Qt, QUrl
 from tinytag import TinyTag
 import yt_dlp
 
@@ -15,7 +16,8 @@ class MainWindow(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.setGeometry(200, 100, 780, 360)
+        self.setGeometry(200, 100, 1063, 285)
+        self.setFixedSize(1063, 285)
         self.setWindowTitle('Music Checker')
         layout = QVBoxLayout()
         #layout.addItem(QSpacerItem(20, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed))
@@ -25,7 +27,7 @@ class MainWindow(QWidget):
         label.setStyleSheet("font-size: 16pt;")
         layout.addWidget(label)
 
-        label = QLabel('This tool checks if the music file is the right one by comparing the YouTube link to the song metadata, if there is no link then it will use the title and author of the metadata.')
+        label = QLabel('This tool checks if the music file is the right one by comparing the YouTube Metadata to the song metadata, if there is no link then it will use the title and author of the metadata.')
         layout.addWidget(label)
 
         layout.addItem(QSpacerItem(10, 10, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed))
@@ -81,6 +83,7 @@ class MainWindow(QWidget):
         self.songCommentLabel = QLabel('Comment: ')
         self.songCommentLabel.setStyleSheet("font-size: 12pt;")
         self.songCommentLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.songCommentLabel.setTextFormat(Qt.TextFormat.RichText)
         self.songCommentLabel.hide()
         labels.addWidget(self.songCommentLabel)
 
@@ -90,6 +93,7 @@ class MainWindow(QWidget):
         self.songSourceLabel = QLabel('Source: ')
         self.songSourceLabel.setStyleSheet("font-size: 12pt;")
         self.songSourceLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.songSourceLabel.setTextFormat(Qt.TextFormat.RichText)
         self.songSourceLabel.hide()
         labels.addWidget(self.songSourceLabel)
         
@@ -133,6 +137,13 @@ class MainWindow(QWidget):
         self.youtubeDurationLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.youtubeDurationLabel.hide()
         labels.addWidget(self.youtubeDurationLabel)
+
+        self.youtubeSourceLabel = QLabel('Source: ')
+        self.youtubeSourceLabel.setStyleSheet("font-size: 12pt;")
+        self.youtubeSourceLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.youtubeSourceLabel.setTextFormat(Qt.TextFormat.RichText)
+        self.youtubeSourceLabel.hide()
+        labels.addWidget(self.youtubeSourceLabel)
         
         centered_layout.addWidget(labels_widget)
         
@@ -144,52 +155,115 @@ class MainWindow(QWidget):
 
         # ---- ----
 
+        layout.addItem(QSpacerItem(30, 30, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed))
+        self.resultLabel = QLabel('')
+        self.resultLabel.setStyleSheet("font-size: 16pt;")
+        self.resultLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.resultLabel.hide()
+        layout.addWidget(self.resultLabel)
+
+        self.findCorrectSongButton = QPushButton('Find correct song on YouTube')
+        self.findCorrectSongButton.clicked.connect(self.find_correct_song)
+        self.findCorrectSongButton.hide()
+        self.findCorrectSongButton.setFixedWidth(200)
+        layout.addWidget(self.findCorrectSongButton, alignment=Qt.AlignmentFlag.AlignCenter)
+
         layout.addStretch()
         self.show()
 
         
-    
+    def find_correct_song(self):
+        if self.check_youtube_link(True):
+            self.resultLabel.show()
+            self.resultLabel.setText('[⚠️] Only the YouTube Metadata matches, the Song Metadata does not match.')
+            self.findCorrectSongButton.hide()
+            return True
+        else:
+            self.resultLabel.show()
+            self.resultLabel.setText('[❌] Could not find a song that matched the metadata.')
+            self.findCorrectSongButton.hide()
+            return False
+            
+
+        
+
     def selectFile(self):
 
         fileDialog = QFileDialog
         # TODO: use native file dialog
 
-        self.current_file, _ = fileDialog.getOpenFileName(self, 'Open File', '.', 'All Files (*.*)')
+        # https://pypi.org/project/tinytag/
+        supported_formats = (
+            "Audio Files (*.mp3 *.mp2 *.mp1 *.m4a *.wav *.ogg *.flac *.wma *.aiff *.aifc);;"
+            "MP3 Files (*.mp3 *.mp2 *.mp1);;"
+            "M4A Files (*.m4a);;"
+            "WAVE Files (*.wav);;"
+            "OGG Files (*.ogg);;"
+            "FLAC Files (*.flac);;"
+            "WMA Files (*.wma);;"
+            "AIFF Files (*.aiff *.aifc);;"
+        )
+        self.current_file, _ = fileDialog.getOpenFileName(self, 'Select Audio File', '', supported_formats)
 
         if not self.current_file or not os.path.exists(self.current_file):
             return None
 
         self.textInput.setText(self.current_file)
+        
+        # hide stuff so the window can actually get resized
+        self.youtubeArtistLabel.hide();
+        self.youtubeDurationLabel.hide();
+        self.youtubeSourceLabel.hide();
+        self.youtubeTitleLabel.hide();
+        self.youtubeMetadataLabel.hide();
+        self.youtubeImageLabel.hide();
+        self.resultLabel.hide();
+        self.findCorrectSongButton.hide();
 
-        # 1. get metadata
-        # 2. update Title, Artist, Duration, Comment (link)
-        # 2.1. show image?
-        self.show_song_metadata()
+        
+        # i mean this works for resizing the window i guess
+        QTimer.singleShot(1, lambda: [self.show_song_metadata(), self.setFixedSize(1063, 500)])
 
-        # 3. check youtube link in comment
-        # 4. if valid then checkmark yay
-        # 4.1 if invalid then check first 2 results and check which one matches the title & artist the best
-        self.check_youtube_link()
+        # its going to be on not responding state sooo
+        QTimer.singleShot(250, lambda: [self.check_youtube_link(), self.setFixedSize(1063, 720)])
+        
         
 
-    def check_youtube_link(self):
+    def check_youtube_link(self, forceTitleAndAuthor=False):
         tag = TinyTag.get(self.current_file, image=False)
         youtube_id = self.extract_youtube_id(tag.comment)
-        if youtube_id is None:
-            return None
+        has_youtube_link = youtube_id is not None and forceTitleAndAuthor == False
+        if has_youtube_link:
+            video_info = self.get_video_info(youtube_id)
+            url = f"https://youtube.com/watch?v={youtube_id}"
+            self.songCommentLabel.setText(f"Comment: <a href='{url}' style='color: blue; text-decoration: underline;'>{url}</a>")
+            self.songCommentLabel.linkActivated.connect(lambda: QDesktopServices.openUrl(QUrl(url)))
+            self.songCommentLabel.show()
+        else:
+            video_info = self.get_video_info_by_title_and_author(tag.title, tag.artist)
+            
 
-        video_info = self.get_video_info(youtube_id)
         if video_info is None:
-            return None
+            print("Failed to get video info:")
+            print("Has YouTube Link: ", has_youtube_link)
+            print("Youtube ID: ", youtube_id)
+            print("Comment: ", tag.comment)
 
-        # if the author name (youtube) contains author name (metadata) and same thing with author then return true
-        print(video_info)
+            self.resultLabel.show()
+            self.resultLabel.setText("An error occured while checking the YouTube Metadata. Check logs for more info.\nPlease try again.")
+            return None
 
         self.show_youtube_metadata(video_info)
 
         if tag.artist.lower() in video_info['author'].lower() and tag.artist.lower() in video_info['author'].lower():
-            print("the youtube song and the metadata song match!!!!")
+            self.resultLabel.show()
+            self.resultLabel.setText('[✅] The YouTube Metadata and the Song Metadata Match!')
             return True
+        else:
+            self.resultLabel.show()
+            self.resultLabel.setText('[❌] The YouTube Metadata and the Song Metadata Do Not Match!')
+            self.findCorrectSongButton.show()
+            return False
 
         
     
@@ -224,6 +298,33 @@ class MainWindow(QWidget):
         except Exception as e:
             print(e)
             return None
+    
+    # insane name
+    def get_video_info_by_title_and_author(self, title, author):
+        try:
+            yt_dlp_opts = {
+                'quiet': True,
+                'no_warnings': True,
+                'extract_flat': False,
+                'skip_download': True,
+                'default_search': 'ytsearch1',
+                'noplaylist': True
+            }
+            
+            with yt_dlp.YoutubeDL(yt_dlp_opts) as ytp:
+                info = ytp.extract_info(f"ytsearch1:{title} - {author}", download=False)
+                top_result = info['entries'][0]
+
+                return {
+                    'title': top_result.get('title'),
+                    'author': top_result.get('uploader'),
+                    'duration': top_result.get('duration'),
+                    'id': top_result.get('id'),
+                    'thumbnail': top_result.get('thumbnail')
+                }
+        except Exception as e:
+            print(e)
+            return None
 
     
     def show_youtube_metadata(self, video_info):
@@ -238,6 +339,11 @@ class MainWindow(QWidget):
         seconds = int(video_info['duration'] % 60)
         self.youtubeDurationLabel.setText(f"Duration: {minutes:02d}:{seconds:02d}")
         self.youtubeDurationLabel.show()
+
+        url = f"https://youtube.com/watch?v={video_info['id']}"
+        self.youtubeSourceLabel.setText(f"Source: <a href='{url}' style='color: blue; text-decoration: underline;'>{url}</a>")
+        self.youtubeSourceLabel.linkActivated.connect(lambda: QDesktopServices.openUrl(QUrl(url)))
+        self.youtubeSourceLabel.show()
 
         if video_info['thumbnail'] is not None:
             response = requests.get(video_info['thumbnail']) # its a webp link
@@ -268,7 +374,9 @@ class MainWindow(QWidget):
         self.songCommentLabel.show()
 
         if tag.other.get('woas') is not None:
-            self.songSourceLabel.setText(f"Source: {tag.other.get('woas')[0]}")
+            url = tag.other.get('woas')[0]
+            self.songSourceLabel.setText(f"Source: <a href='{url}' style='color: blue; text-decoration: underline;'>{url}</a>")
+            self.songSourceLabel.linkActivated.connect(lambda: QDesktopServices.openUrl(QUrl(url)))
             self.songSourceLabel.show()
 
         if image is not None:
@@ -279,7 +387,10 @@ class MainWindow(QWidget):
             bytes_buffer = QByteArray(data)
             pixmap = QPixmap()
             pixmap.loadFromData(bytes_buffer)
-            pixmap = pixmap.scaled(200, 200)
+            if pixmap.width() / pixmap.height() != 16 / 9:
+                pixmap = pixmap.scaled(200, 200)
+            else:
+                pixmap = pixmap.scaled(356, 200)
 
             self.songImageLabel.setPixmap(pixmap)
             self.songImageLabel.show()        

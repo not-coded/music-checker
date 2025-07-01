@@ -2,7 +2,6 @@ import os
 import sys
 import re
 import requests
-import time
 from PyQt6.QtWidgets import QApplication, QSpacerItem, QSizePolicy, QLabel, QFileDialog, QLineEdit, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel
 from PyQt6.QtGui import QPixmap, QDesktopServices
 from PyQt6.QtCore import QByteArray, QTimer, Qt, QUrl

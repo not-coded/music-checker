@@ -15,8 +15,8 @@ class MainWindow(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.setGeometry(200, 100, 1063, 285)
-        self.setFixedSize(1063, 285)
+        self.setGeometry(200, 100, 1065, 285)
+        self.setFixedSize(1065, 285)
         self.setWindowTitle('Music Checker')
         layout = QVBoxLayout()
         #layout.addItem(QSpacerItem(20, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed))
@@ -190,14 +190,15 @@ class MainWindow(QWidget):
 
         fileDialog = QFileDialog
         # TODO: use native file dialog
+        # ^^ tell linux users to install the pyqt6 from distro package manager instead of pip
 
         # https://pypi.org/project/tinytag/
         supported_formats = (
-            "Audio Files (*.mp3 *.mp2 *.mp1 *.m4a *.wav *.ogg *.flac *.wma *.aiff *.aifc);;"
+            "Audio Files (*.mp3 *.mp2 *.mp1 *.m4a *.wav *.ogg *.opus *.flac *.aac *.wma *.aiff *.aifc);;"
             "MP3 Files (*.mp3 *.mp2 *.mp1);;"
-            "M4A Files (*.m4a);;"
+            "M4A Files (*.m4a *.aac);;"
             "WAVE Files (*.wav);;"
-            "OGG Files (*.ogg);;"
+            "OGG Files (*.ogg *.opus);;"
             "FLAC Files (*.flac);;"
             "WMA Files (*.wma);;"
             "AIFF Files (*.aiff *.aifc);;"
@@ -221,10 +222,12 @@ class MainWindow(QWidget):
 
         
         # i mean this works for resizing the window i guess
-        QTimer.singleShot(1, lambda: [self.show_song_metadata(), self.setFixedSize(1063, 500)])
+        QTimer.singleShot(1, lambda: [self.show_song_metadata(), self.setFixedSize(1065, 500)])
+        self.resultLabel.setText('[⏳] Retrieving YouTube Metadata...')
+        self.resultLabel.show()
 
         # its going to be on not responding state sooo
-        QTimer.singleShot(250, lambda: [self.check_youtube_link(), self.setFixedSize(1063, 720)])
+        QTimer.singleShot(250, lambda: [self.check_youtube_link(), self.setFixedSize(1065, 720)])
         
         
 
